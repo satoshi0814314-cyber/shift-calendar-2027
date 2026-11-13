@@ -562,7 +562,8 @@
         2027: new Map([
           ['2027-01-01', '元日'], ['2027-01-11', '成人の日'],
           ['2027-02-11', '建国記念の日'], ['2027-02-23', '天皇誕生日'],
-          ['2027-03-20', '春分の日'], ['2027-05-03', '憲法記念日'],
+          ['2027-03-21', '春分の日'], ['2027-03-22', '振替休日'],
+          ['2027-04-29', '昭和の日'], ['2027-05-03', '憲法記念日'],
           ['2027-05-04', 'みどりの日'], ['2027-05-05', 'こどもの日'],
           ['2027-07-19', '海の日'], ['2027-08-11', '山の日'],
           ['2027-09-20', '敬老の日'], ['2027-09-23', '秋分の日'],
@@ -744,6 +745,13 @@
       }
 
       function loadState() {
+        wageInput.value = '1200';
+        weekendInput.value = '0';
+        timeInput.value = '0';
+        timePremiumStartInput.value = '17:00';
+        timePremiumEndInput.value = '21:00';
+        state.shifts = {};
+        state.events = {};
         try {
           const saved = localStorage.getItem(STORAGE_KEYS[YEAR]);
           if (!saved) return;
@@ -972,8 +980,6 @@
         }
         YEAR = nextYear;
         holidays = holidaysByYear[YEAR];
-        state.shifts = {};
-        state.events = {};
         loadState();
         updateYearLabels();
         selectInitialDate();
@@ -1012,8 +1018,6 @@
           if (!saveState()) return;
           YEAR = nextYear;
           holidays = holidaysByYear[YEAR];
-          state.shifts = {};
-          state.events = {};
           loadState();
           updateYearLabels();
         }
@@ -1308,7 +1312,6 @@
 
       loadState();
       updateYearLabels();
-      renderAll();
       selectInitialDate();
     })();
   </script>
