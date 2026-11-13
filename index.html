@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f6f2ec">
-  <title>2027年 バイト収入予定カレンダー</title>
+  <title>バイト収入予定カレンダー</title>
   <style>
     :root {
       color-scheme: light;
@@ -249,6 +249,16 @@
       font-size: .95rem;
     }
 
+    .calendar-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 24px 0 12px;
+    }
+
+    .calendar-controls label { font-size: .9rem; font-weight: 700; }
+    .calendar-controls select { width: auto; min-width: 100px; }
+
     .month-grid {
       display: grid;
       grid-template-columns: repeat(3, minmax(280px, 1fr));
@@ -361,13 +371,13 @@
   <div class="page">
     <header class="header">
       <p class="eyebrow">SHIFT &amp; INCOME PLANNER</p>
-      <h1>2027年 バイト収入予定カレンダー</h1>
+      <h1>バイト収入予定カレンダー</h1>
       <p class="subtitle">日付とシフトを登録すると、土日祝日・時間帯の手当を含めて収入を計算します。</p>
     </header>
 
     <section class="top-grid" aria-label="収入と手当の設定">
       <aside class="panel">
-        <h2>年間の収入予定</h2>
+        <h2 id="annual-heading">2026年の収入予定</h2>
         <div class="summary-row">
           <span class="summary-label">勤務日数</span>
           <span class="summary-value" id="total-days">0日</span>
@@ -435,7 +445,7 @@
       <div class="editor-grid">
         <label for="shift-date">日付
           <div class="stepper-input">
-            <input id="shift-date" type="date" min="2027-01-01" max="2027-12-31">
+            <input id="shift-date" type="date" min="2026-01-01" max="2026-12-31">
             <div class="stepper-unit">
               <span>月</span>
               <button type="button" data-date-unit="month" data-step="1" aria-label="翌月へ">▲</button>
@@ -489,28 +499,55 @@
     </dialog>
     <p id="status" role="status" aria-live="polite"></p>
 
-    <h2 class="calendar-heading">2027年のカレンダー（日付をクリックすると予定の登録画面が開きます）</h2>
-    <main id="month-grid" class="month-grid" aria-label="2027年のシフト・予定カレンダー"></main>
+    <div class="calendar-controls">
+      <label for="calendar-year">表示する年</label>
+      <select id="calendar-year">
+        <option value="2026">2026年</option>
+        <option value="2027">2027年</option>
+      </select>
+    </div>
+    <h2 id="calendar-heading" class="calendar-heading">2026年のカレンダー（日付をクリックすると予定の登録画面が開きます）</h2>
+    <main id="month-grid" class="month-grid" aria-label="2026年のシフト・予定カレンダー"></main>
   </div>
 
   <script>
     (() => {
-      const YEAR = 2027;
-      const STORAGE_KEY = 'shift-calendar-2027-web-v1';
+      const AVAILABLE_YEARS = [2026, 2027];
+      let YEAR = AVAILABLE_YEARS.includes(new Date().getFullYear())
+        ? new Date().getFullYear()
+        : AVAILABLE_YEARS[0];
+      const STORAGE_KEYS = {
+        2026: 'shift-calendar-2026-web-v1',
+        2027: 'shift-calendar-2027-web-v1'
+      };
       const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
       const weekdayFull = ['日曜日', '月曜日', '火曜日', '水曜日', '木曜日', '金曜日', '土曜日'];
       const monthNames = ['1月', '2月', '3月', '4月', '5月', '6月',
         '7月', '8月', '9月', '10月', '11月', '12月'];
-      const holidays = new Map([
-        ['2027-01-01', '元日'], ['2027-01-11', '成人の日'],
-        ['2027-02-11', '建国記念の日'], ['2027-02-23', '天皇誕生日'],
-        ['2027-03-20', '春分の日'], ['2027-05-03', '憲法記念日'],
-        ['2027-05-04', 'みどりの日'], ['2027-05-05', 'こどもの日'],
-        ['2027-07-19', '海の日'], ['2027-08-11', '山の日'],
-        ['2027-09-20', '敬老の日'], ['2027-09-23', '秋分の日'],
-        ['2027-10-11', 'スポーツの日'], ['2027-11-03', '文化の日'],
-        ['2027-11-23', '勤労感謝の日']
-      ]);
+      const holidaysByYear = {
+        2026: new Map([
+          ['2026-01-01', '元日'], ['2026-01-12', '成人の日'],
+          ['2026-02-11', '建国記念の日'], ['2026-02-23', '天皇誕生日'],
+          ['2026-03-20', '春分の日'], ['2026-04-29', '昭和の日'],
+          ['2026-05-03', '憲法記念日'], ['2026-05-04', 'みどりの日'],
+          ['2026-05-05', 'こどもの日'], ['2026-05-06', '振替休日'],
+          ['2026-07-20', '海の日'], ['2026-08-11', '山の日'],
+          ['2026-09-21', '敬老の日'], ['2026-09-22', '国民の休日'],
+          ['2026-09-23', '秋分の日'], ['2026-10-12', 'スポーツの日'],
+          ['2026-11-03', '文化の日'], ['2026-11-23', '勤労感謝の日']
+        ]),
+        2027: new Map([
+          ['2027-01-01', '元日'], ['2027-01-11', '成人の日'],
+          ['2027-02-11', '建国記念の日'], ['2027-02-23', '天皇誕生日'],
+          ['2027-03-20', '春分の日'], ['2027-05-03', '憲法記念日'],
+          ['2027-05-04', 'みどりの日'], ['2027-05-05', 'こどもの日'],
+          ['2027-07-19', '海の日'], ['2027-08-11', '山の日'],
+          ['2027-09-20', '敬老の日'], ['2027-09-23', '秋分の日'],
+          ['2027-10-11', 'スポーツの日'], ['2027-11-03', '文化の日'],
+          ['2027-11-23', '勤労感謝の日']
+        ])
+      };
+      let holidays = holidaysByYear[YEAR];
 
       const wageInput = document.getElementById('hourly-wage');
       const weekendInput = document.getElementById('weekend-premium');
@@ -518,6 +555,9 @@
       const timePremiumStartInput = document.getElementById('time-premium-start');
       const timePremiumEndInput = document.getElementById('time-premium-end');
       const dateInput = document.getElementById('shift-date');
+      const yearInput = document.getElementById('calendar-year');
+      const annualHeading = document.getElementById('annual-heading');
+      const calendarHeading = document.getElementById('calendar-heading');
       const startInput = document.getElementById('start-time');
       const endInput = document.getElementById('end-time');
       const shiftDialog = document.getElementById('shift-dialog');
@@ -531,6 +571,17 @@
       const exportButton = document.getElementById('export-ical');
       const settingsErrorMessage = '時給・手当は0以上の整数、時間手当の開始・終了は異なる時刻を入力してください。';
       const state = { selectedDate: null, shifts: {}, events: {} };
+
+      function updateYearLabels() {
+        document.title = `${YEAR}年 バイト収入予定カレンダー`;
+        document.querySelector('.header h1').textContent = document.title;
+        annualHeading.textContent = `${YEAR}年の収入予定`;
+        calendarHeading.textContent = `${YEAR}年のカレンダー（日付をクリックすると予定の登録画面が開きます）`;
+        monthGrid.setAttribute('aria-label', `${YEAR}年のシフト・予定カレンダー`);
+        dateInput.min = `${YEAR}-01-01`;
+        dateInput.max = `${YEAR}-12-31`;
+        yearInput.value = String(YEAR);
+      }
 
       function dateKey(year, month, day) {
         return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
@@ -655,7 +706,7 @@
           return false;
         }
         try {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify({
+          localStorage.setItem(STORAGE_KEYS[YEAR], JSON.stringify({
             settings,
             shifts: state.shifts,
             events: state.events
@@ -671,7 +722,7 @@
 
       function loadState() {
         try {
-          const saved = localStorage.getItem(STORAGE_KEY);
+          const saved = localStorage.getItem(STORAGE_KEYS[YEAR]);
           if (!saved) return;
           const parsed = JSON.parse(saved);
           if (parsed && parsed.settings) {
@@ -682,12 +733,18 @@
             timePremiumEndInput.value = String(parsed.settings.timePremiumEnd ?? '21:00');
           }
           if (parsed && parsed.shifts && typeof parsed.shifts === 'object') {
-            state.shifts = parsed.shifts;
+            state.shifts = {};
+            for (const [key, shift] of Object.entries(parsed.shifts)) {
+              if (key.startsWith(`${YEAR}-`) && shift &&
+                  typeof shift.start === 'string' && typeof shift.end === 'string') {
+                state.shifts[key] = shift;
+              }
+            }
           }
           if (parsed && parsed.events && typeof parsed.events === 'object') {
             state.events = {};
             for (const [key, events] of Object.entries(parsed.events)) {
-              if (/^2027-\d{2}-\d{2}$/.test(key) && Array.isArray(events)) {
+              if (new RegExp(`^${YEAR}-\\d{2}-\\d{2}$`).test(key) && Array.isArray(events)) {
                 state.events[key] = events.filter((event) => typeof event === 'string' && event.trim());
               }
             }
@@ -726,10 +783,10 @@
         const lines = [
           'BEGIN:VCALENDAR',
           'VERSION:2.0',
-          'PRODID:-//Shift Calendar 2027//JA',
+          `PRODID:-//Shift Calendar ${YEAR}//JA`,
           'CALSCALE:GREGORIAN',
           'METHOD:PUBLISH',
-          'X-WR-CALNAME:2027年 シフトと予定',
+          `X-WR-CALNAME:${YEAR}年 シフトと予定`,
           'BEGIN:VTIMEZONE',
           'TZID:Asia/Tokyo',
           'X-LIC-LOCATION:Asia/Tokyo',
@@ -753,7 +810,7 @@
           const income = currency(shiftIncome(key, shift, settings));
           lines.push(
             'BEGIN:VEVENT',
-            `UID:shift-${key}@shift-calendar-2027.local`,
+            `UID:shift-${key}@shift-calendar-${YEAR}.local`,
             `DTSTAMP:${stamp}`,
             `DTSTART;TZID=Asia/Tokyo:${icsDateTime(key, shift.start)}`,
             `DTEND;TZID=Asia/Tokyo:${icsDateTime(endKey, shift.end)}`,
@@ -773,7 +830,7 @@
             if (typeof name !== 'string' || !name.trim()) return;
             lines.push(
               'BEGIN:VEVENT',
-              `UID:event-${key}-${index}@shift-calendar-2027.local`,
+              `UID:event-${key}-${index}@shift-calendar-${YEAR}.local`,
               `DTSTAMP:${stamp}`,
               `DTSTART;VALUE=DATE:${icsDate(key)}`,
               `DTEND;VALUE=DATE:${icsDate(endKey)}`,
@@ -790,7 +847,7 @@
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = 'shift_calendar_2027.ics';
+        link.download = `shift_calendar_${YEAR}.ics`;
         document.body.appendChild(link);
         link.click();
         link.remove();
@@ -828,8 +885,8 @@
       function addEvent() {
         const key = dateInput.value;
         const name = eventTitleInput.value.trim();
-        if (!key || !key.startsWith('2027-')) {
-          setStatus('2027年の日付を選択してください。', true);
+        if (!key || !key.startsWith(`${YEAR}-`)) {
+          setStatus(`${YEAR}年の日付を選択してください。`, true);
           return;
         }
         if (!name) {
@@ -875,8 +932,32 @@
         }
       }
 
+      function selectInitialDate() {
+        const dates = [...Object.keys(state.shifts), ...Object.keys(state.events)]
+          .filter((key) => key.startsWith(`${YEAR}-`))
+          .sort();
+        selectDate(dates[0] || `${YEAR}-01-01`);
+      }
+
+      function changeYear(value) {
+        const nextYear = Number(value);
+        if (!AVAILABLE_YEARS.includes(nextYear) || nextYear === YEAR) return;
+        if (!saveState()) {
+          yearInput.value = String(YEAR);
+          return;
+        }
+        YEAR = nextYear;
+        holidays = holidaysByYear[YEAR];
+        state.shifts = {};
+        state.events = {};
+        loadState();
+        updateYearLabels();
+        selectInitialDate();
+        setStatus('');
+      }
+
       function adjustDate(unit, step) {
-        const key = dateInput.value || state.selectedDate || '2027-01-01';
+        const key = dateInput.value || state.selectedDate || `${YEAR}-01-01`;
         const date = dateFromKey(key);
         if (unit === 'month') {
           const month = date.getMonth() + step;
@@ -908,9 +989,9 @@
         const header = document.createElement('header');
         header.className = 'month-header';
         const title = document.createElement('h3');
-        title.textContent = `2027年 ${monthNames[monthIndex]}`;
+        title.textContent = `${YEAR}年 ${monthNames[monthIndex]}`;
         const monthTotal = Object.entries(state.shifts).reduce((sum, [key, shift]) => {
-          if (!key.startsWith(`2027-${String(monthIndex + 1).padStart(2, '0')}-`)) return sum;
+          if (!key.startsWith(`${YEAR}-${String(monthIndex + 1).padStart(2, '0')}-`)) return sum;
           return sum + shiftIncome(key, shift, settings);
         }, 0);
         const total = document.createElement('span');
@@ -1032,8 +1113,8 @@
         const key = dateInput.value;
         const start = startInput.value;
         const end = endInput.value;
-        if (!key || !key.startsWith('2027-')) {
-          setStatus('2027年の日付を選択してください。', true);
+        if (!key || !key.startsWith(`${YEAR}-`)) {
+          setStatus(`${YEAR}年の日付を選択してください。`, true);
           return;
         }
         if (!start || !end || start === end) {
@@ -1056,8 +1137,8 @@
         const sourceKey = dateInput.value;
         const start = startInput.value;
         const end = endInput.value;
-        if (!sourceKey || !sourceKey.startsWith('2027-')) {
-          setStatus('2027年の日付を選択してください。', true);
+        if (!sourceKey || !sourceKey.startsWith(`${YEAR}-`)) {
+          setStatus(`${YEAR}年の日付を選択してください。`, true);
           return;
         }
         if (!start || !end || start === end) {
@@ -1131,12 +1212,13 @@
 
       dateInput.addEventListener('change', () => {
         const key = dateInput.value;
-        if (key && key.startsWith('2027-')) {
+        if (key && key.startsWith(`${YEAR}-`)) {
           selectDate(key);
         } else if (key) {
-          setStatus('2027年の日付を選択してください。', true);
+          setStatus(`${YEAR}年の日付を選択してください。`, true);
         }
       });
+      yearInput.addEventListener('change', () => changeYear(yearInput.value));
       document.querySelectorAll('[data-date-unit]').forEach((button) => {
         button.addEventListener('click', () => {
           adjustDate(button.dataset.dateUnit, Number(button.dataset.step));
@@ -1160,13 +1242,9 @@
       });
 
       loadState();
+      updateYearLabels();
       renderAll();
-      if (state.shifts && Object.keys(state.shifts).length) {
-        const firstDate = Object.keys(state.shifts).sort()[0];
-        selectDate(firstDate);
-      } else {
-        selectDate('2027-01-01');
-      }
+      selectInitialDate();
     })();
   </script>
 </body>
