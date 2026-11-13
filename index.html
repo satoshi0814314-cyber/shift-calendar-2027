@@ -261,8 +261,10 @@
 
     .month-grid {
       display: grid;
-      grid-template-columns: repeat(3, minmax(280px, 1fr));
+      grid-template-columns: minmax(0, 1fr);
       gap: 16px;
+      max-width: 900px;
+      margin-inline: auto;
     }
 
     .month-card { padding: 16px 14px 14px; }
@@ -270,8 +272,15 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
+      flex-wrap: wrap;
       gap: 8px;
       margin: 0 0 12px;
+    }
+
+    .month-navigation {
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
 
     .month-header h3 {
@@ -279,6 +288,19 @@
       font-size: 1.3rem;
       letter-spacing: .04em;
     }
+
+    .month-navigation button {
+      width: 38px;
+      min-height: 38px;
+      border: 1px solid #dcd1c5;
+      border-radius: 50%;
+      background: #f8f5f1;
+      color: #403a35;
+      font-size: 1.1rem;
+    }
+
+    .month-navigation button:hover { background: var(--accent-light); }
+    .month-navigation button:disabled { cursor: not-allowed; opacity: .4; }
 
     .month-total {
       border-radius: 999px;
@@ -353,7 +375,7 @@
     .day-event-more { color: #59477a; font-size: .58rem; }
 
     @media (max-width: 1050px) {
-      .month-grid { grid-template-columns: repeat(2, minmax(260px, 1fr)); }
+      .month-grid { grid-template-columns: minmax(0, 1fr); }
       .top-grid { grid-template-columns: 1fr; }
     }
     @media (max-width: 620px) {
@@ -516,6 +538,7 @@
       let YEAR = AVAILABLE_YEARS.includes(new Date().getFullYear())
         ? new Date().getFullYear()
         : AVAILABLE_YEARS[0];
+      let currentMonth = new Date().getMonth();
       const STORAGE_KEYS = {
         2026: 'shift-calendar-2026-web-v1',
         2027: 'shift-calendar-2027-web-v1'
@@ -919,6 +942,7 @@
 
       function selectDate(key, openDialog = false) {
         state.selectedDate = key;
+        currentMonth = dateFromKey(key).getMonth();
         dateInput.value = key;
         const shift = state.shifts[key];
         startInput.value = shift ? shift.start : '17:00';
@@ -936,7 +960,7 @@
         const dates = [...Object.keys(state.shifts), ...Object.keys(state.events)]
           .filter((key) => key.startsWith(`${YEAR}-`))
           .sort();
-        selectDate(dates[0] || `${YEAR}-01-01`);
+        selectDate(dates[0] || dateKey(YEAR, currentMonth, 1));
       }
 
       function changeYear(value) {
@@ -971,6 +995,34 @@
         selectDate(dateKey(YEAR, date.getMonth(), date.getDate()));
       }
 
+      function changeMonth(step) {
+        let nextYear = YEAR;
+        let nextMonth = currentMonth + step;
+        if (nextMonth < 0) {
+          nextYear -= 1;
+          nextMonth = 11;
+        } else if (nextMonth > 11) {
+          nextYear += 1;
+          nextMonth = 0;
+        }
+        if (!AVAILABLE_YEARS.includes(nextYear)) return;
+
+        const selectedDay = dateInput.value ? dateFromKey(dateInput.value).getDate() : 1;
+        if (nextYear !== YEAR) {
+          if (!saveState()) return;
+          YEAR = nextYear;
+          holidays = holidaysByYear[YEAR];
+          state.shifts = {};
+          state.events = {};
+          loadState();
+          updateYearLabels();
+        }
+
+        const day = Math.min(selectedDay, new Date(YEAR, nextMonth + 1, 0).getDate());
+        selectDate(dateKey(YEAR, nextMonth, day));
+        setStatus('');
+      }
+
       function adjustTime(target, step) {
         const input = document.getElementById(target);
         const defaultTime = target.includes('start') ? '17:00' : '21:00';
@@ -988,8 +1040,23 @@
 
         const header = document.createElement('header');
         header.className = 'month-header';
+        const navigation = document.createElement('div');
+        navigation.className = 'month-navigation';
+        const previousButton = document.createElement('button');
+        previousButton.type = 'button';
+        previousButton.textContent = '‹';
+        previousButton.setAttribute('aria-label', '前の月');
+        previousButton.disabled = monthIndex === 0 && YEAR === AVAILABLE_YEARS[0];
+        previousButton.addEventListener('click', () => changeMonth(-1));
         const title = document.createElement('h3');
         title.textContent = `${YEAR}年 ${monthNames[monthIndex]}`;
+        const nextButton = document.createElement('button');
+        nextButton.type = 'button';
+        nextButton.textContent = '›';
+        nextButton.setAttribute('aria-label', '次の月');
+        nextButton.disabled = monthIndex === 11 && YEAR === AVAILABLE_YEARS[AVAILABLE_YEARS.length - 1];
+        nextButton.addEventListener('click', () => changeMonth(1));
+        navigation.append(previousButton, title, nextButton);
         const monthTotal = Object.entries(state.shifts).reduce((sum, [key, shift]) => {
           if (!key.startsWith(`${YEAR}-${String(monthIndex + 1).padStart(2, '0')}-`)) return sum;
           return sum + shiftIncome(key, shift, settings);
@@ -997,7 +1064,7 @@
         const total = document.createElement('span');
         total.className = 'month-total';
         total.textContent = `月収 ${currency(monthTotal)}`;
-        header.append(title, total);
+        header.append(navigation, total);
         card.appendChild(header);
 
         const table = document.createElement('table');
@@ -1103,9 +1170,7 @@
         timeRangeLabel.textContent = `${settings.timePremiumStart}〜${settings.timePremiumEnd}` +
           (timeToMinutes(settings.timePremiumEnd) <= timeToMinutes(settings.timePremiumStart) ? '（翌日）' : '');
         monthGrid.replaceChildren();
-        for (let month = 0; month < 12; month += 1) {
-          monthGrid.appendChild(createMonth(month, settings));
-        }
+        monthGrid.appendChild(createMonth(currentMonth, settings));
         updateSummary(settings);
       }
 
