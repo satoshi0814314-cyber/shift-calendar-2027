@@ -1,0 +1,1173 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f6f2ec">
+  <title>2027年 バイト収入予定カレンダー</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: "Yu Gothic", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+      color: #302d2a;
+      background: #f6f2ec;
+      --panel: #fffdfa;
+      --line: #e8dfd4;
+      --muted: #756d68;
+      --accent: #c76547;
+      --accent-light: #fae7df;
+      --sun: #c94f4a;
+      --sat: #4774b6;
+      --green: #357657;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(ellipse at 10% 5%, #efe3d5 0, transparent 34%),
+        linear-gradient(160deg, #f8f4ee, #eef4f6);
+    }
+
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+
+    .page {
+      width: min(1500px, 100%);
+      margin: auto;
+      padding: 28px clamp(14px, 3vw, 36px) 48px;
+    }
+
+    .header { margin: 0 0 24px; text-align: center; }
+    .eyebrow {
+      margin: 0;
+      color: var(--muted);
+      font-size: .78rem;
+      font-weight: 700;
+      letter-spacing: .2em;
+    }
+
+    h1 {
+      margin: 9px 0 7px;
+      font-size: clamp(1.8rem, 4vw, 3rem);
+      letter-spacing: .04em;
+    }
+
+    .subtitle { margin: 0; color: var(--muted); line-height: 1.7; }
+
+    .top-grid {
+      display: grid;
+      grid-template-columns: minmax(250px, .75fr) minmax(0, 2fr);
+      gap: 16px;
+      margin-bottom: 22px;
+    }
+
+    .panel, .month-card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      box-shadow: 0 9px 26px #33271b0d;
+    }
+
+    .panel { padding: 20px; }
+    .panel h2 { margin: 0 0 14px; font-size: 1.05rem; }
+
+    .shift-dialog {
+      width: min(760px, calc(100% - 24px));
+      max-width: none;
+      max-height: calc(100vh - 32px);
+      padding: 0;
+      overflow: auto;
+      border: 0;
+      border-radius: 18px;
+      background: transparent;
+      color: inherit;
+    }
+
+    .shift-dialog::backdrop {
+      background: rgba(35, 30, 26, .48);
+      backdrop-filter: blur(2px);
+    }
+
+    .shift-dialog .editor-panel { margin: 0; }
+    .dialog-heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .dialog-heading h2 { margin: 0; }
+
+    .event-section {
+      margin-top: 18px;
+      padding-top: 16px;
+      border-top: 1px solid var(--line);
+    }
+
+    .event-section h3 { margin: 0 0 10px; font-size: 1rem; }
+    .event-form {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: end;
+    }
+    .event-list {
+      display: grid;
+      gap: 7px;
+      margin: 12px 0 0;
+      padding: 0;
+      list-style: none;
+    }
+    .event-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 8px 10px;
+      border: 1px solid #eadbd2;
+      border-radius: 9px;
+      background: #fff8f4;
+    }
+    .event-item-name { overflow-wrap: anywhere; }
+    .event-empty { margin: 10px 0 0; color: var(--muted); font-size: .85rem; }
+    .event-delete { min-height: 32px; padding: 5px 10px; }
+
+    .summary-row {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 9px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .summary-row:last-of-type { border-bottom: 0; }
+    .summary-label { color: var(--muted); font-size: .9rem; }
+    .summary-value { font-size: 1.05rem; font-weight: 800; text-align: right; }
+    #annual-income { color: var(--green); font-size: 1.25rem; }
+
+    .storage-status {
+      margin: 10px 0 0;
+      color: var(--muted);
+      font-size: .78rem;
+      line-height: 1.5;
+    }
+
+    .settings-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(130px, 1fr));
+      gap: 12px;
+    }
+
+    label {
+      display: grid;
+      gap: 6px;
+      color: var(--muted);
+      font-size: .85rem;
+      font-weight: 700;
+    }
+
+    input {
+      width: 100%;
+      min-height: 43px;
+      padding: 9px 11px;
+      border: 1px solid #dcd1c5;
+      border-radius: 10px;
+      background: white;
+      color: #302d2a;
+    }
+
+    input:focus-visible, button:focus-visible {
+      outline: 3px solid #d58a70;
+      outline-offset: 2px;
+    }
+
+    .editor-panel { margin-bottom: 22px; }
+    .editor-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(130px, 1fr));
+      gap: 12px;
+      align-items: end;
+    }
+
+    .stepper-input {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) repeat(2, 36px);
+      align-items: center;
+      gap: 5px;
+    }
+
+    .stepper-unit {
+      display: grid;
+      justify-items: stretch;
+      gap: 2px;
+    }
+
+    .stepper-unit span {
+      color: var(--muted);
+      font-size: .64rem;
+      line-height: 1;
+      text-align: center;
+    }
+
+    .stepper-unit button {
+      min-height: 19px;
+      padding: 0;
+      border: 1px solid #dcd1c5;
+      border-radius: 5px;
+      background: #f8f5f1;
+      color: #403a35;
+      font-size: .75rem;
+      line-height: 1;
+    }
+
+    .stepper-unit button:hover { background: var(--accent-light); }
+
+    .button-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+    .shift-actions { grid-column: 1 / -1; }
+    .button {
+      min-height: 42px;
+      padding: 9px 17px;
+      border: 0;
+      border-radius: 999px;
+      font-weight: 700;
+    }
+    .button-primary { background: var(--accent); color: white; }
+    .button-secondary { background: #ebe8e3; color: #383431; }
+    .button:hover { filter: brightness(.96); }
+    .button:disabled { cursor: not-allowed; opacity: .5; }
+
+    .hint { margin: 12px 0 0; color: var(--muted); font-size: .8rem; line-height: 1.7; }
+    #status { min-height: 1.4em; margin: 10px 0 0; color: var(--green); font-size: .88rem; }
+    #status.error { color: #a63d35; }
+
+    .calendar-heading {
+      margin: 0 0 12px;
+      color: #4b4540;
+      font-size: .95rem;
+    }
+
+    .month-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(280px, 1fr));
+      gap: 16px;
+    }
+
+    .month-card { padding: 16px 14px 14px; }
+    .month-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin: 0 0 12px;
+    }
+
+    .month-header h3 {
+      margin: 0;
+      font-size: 1.3rem;
+      letter-spacing: .04em;
+    }
+
+    .month-total {
+      border-radius: 999px;
+      padding: 5px 9px;
+      background: #edf5ef;
+      color: var(--green);
+      font-size: .76rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    table { width: 100%; table-layout: fixed; border-collapse: separate; border-spacing: 3px; }
+    th {
+      height: 28px;
+      color: var(--muted);
+      font-size: .78rem;
+      font-weight: 700;
+    }
+    th:first-child { color: var(--sun); }
+    th:last-child { color: var(--sat); }
+    td { padding: 0; vertical-align: top; }
+
+    .day-button {
+      display: flex;
+      width: 100%;
+      min-height: 96px;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      padding: 6px 2px 4px;
+      border: 1px solid #eee7df;
+      border-radius: 9px;
+      background: white;
+      color: #302d2a;
+      text-align: center;
+    }
+
+    .day-button:hover { background: #fbf3ee; border-color: #e6b7a5; }
+    .day-button.selected { border: 2px solid var(--accent); background: #fff1eb; }
+    .day-button.sunday, .day-button.holiday { color: var(--sun); }
+    .day-button.saturday { color: var(--sat); }
+    .day-button.empty { min-height: 96px; border-color: transparent; background: #faf8f5; cursor: default; }
+
+    .day-number { font-size: 1.05rem; font-weight: 800; line-height: 1.1; }
+    .holiday-tag {
+      color: var(--sun);
+      font-size: .62rem;
+      font-weight: 700;
+      line-height: 1;
+    }
+    .shift-info {
+      max-width: 100%;
+      color: #665c55;
+      font-size: .62rem;
+      line-height: 1.2;
+      overflow-wrap: anywhere;
+    }
+    .shift-income { color: var(--green); font-size: .65rem; font-weight: 800; }
+    .day-events { display: grid; width: 100%; gap: 2px; }
+    .day-event {
+      max-width: 100%;
+      overflow: hidden;
+      padding: 2px 4px;
+      border-radius: 5px;
+      background: #f1eafb;
+      color: #59477a;
+      font-size: .6rem;
+      line-height: 1.15;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .day-event-more { color: #59477a; font-size: .58rem; }
+
+    @media (max-width: 1050px) {
+      .month-grid { grid-template-columns: repeat(2, minmax(260px, 1fr)); }
+      .top-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 620px) {
+      .page { padding-inline: 10px; }
+      .month-grid { grid-template-columns: 1fr; }
+      .settings-grid, .editor-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .panel { padding: 16px 13px; }
+      .month-card { padding-inline: 9px; }
+      .day-button { min-height: 88px; }
+      .day-button.empty { min-height: 88px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="header">
+      <p class="eyebrow">SHIFT &amp; INCOME PLANNER</p>
+      <h1>2027年 バイト収入予定カレンダー</h1>
+      <p class="subtitle">日付とシフトを登録すると、土日祝日・時間帯の手当を含めて収入を計算します。</p>
+    </header>
+
+    <section class="top-grid" aria-label="収入と手当の設定">
+      <aside class="panel">
+        <h2>年間の収入予定</h2>
+        <div class="summary-row">
+          <span class="summary-label">勤務日数</span>
+          <span class="summary-value" id="total-days">0日</span>
+        </div>
+        <div class="summary-row">
+          <span class="summary-label">総勤務時間</span>
+          <span class="summary-value" id="total-hours">0.0時間</span>
+        </div>
+        <div class="summary-row">
+          <span class="summary-label">年間予定収入</span>
+          <span class="summary-value" id="annual-income">¥0</span>
+        </div>
+        <div class="button-row">
+          <button id="export-ical" class="button button-primary" type="button" disabled>
+            iPhoneカレンダー用に書き出し（.ics）
+          </button>
+        </div>
+        <p class="hint">書き出したファイルをiPhoneへ送り、開いてカレンダーに追加してください。予定の変更後は再度書き出しが必要です。</p>
+        <p id="storage-status" class="storage-status" role="status">入力内容はこのブラウザに自動保存されます。</p>
+      </aside>
+
+      <section class="panel">
+        <h2>時給・手当設定</h2>
+        <div class="settings-grid">
+          <label for="hourly-wage">基本時給（円）
+            <input id="hourly-wage" type="number" min="0" max="1000000" step="1" value="1200">
+          </label>
+          <label for="weekend-premium">土日祝日手当（円/時間）
+            <input id="weekend-premium" type="number" min="0" max="1000000" step="1" value="0">
+          </label>
+          <label for="time-premium">時間手当（円/時間）
+            <input id="time-premium" type="number" min="0" max="1000000" step="1" value="0">
+          </label>
+          <label for="time-premium-start">時間手当の開始時刻
+            <div class="stepper-input">
+              <input id="time-premium-start" type="time" step="1800" value="17:00">
+              <div class="stepper-unit">
+                <span>30分</span>
+                <button type="button" data-time-target="time-premium-start" data-step="30" aria-label="時間手当の開始時刻を30分進める">▲</button>
+                <button type="button" data-time-target="time-premium-start" data-step="-30" aria-label="時間手当の開始時刻を30分戻す">▼</button>
+              </div>
+            </div>
+          </label>
+          <label for="time-premium-end">時間手当の終了時刻
+            <div class="stepper-input">
+              <input id="time-premium-end" type="time" step="1800" value="21:00">
+              <div class="stepper-unit">
+                <span>30分</span>
+                <button type="button" data-time-target="time-premium-end" data-step="30" aria-label="時間手当の終了時刻を30分進める">▲</button>
+                <button type="button" data-time-target="time-premium-end" data-step="-30" aria-label="時間手当の終了時刻を30分戻す">▼</button>
+              </div>
+            </div>
+          </label>
+        </div>
+        <p class="hint">土日祝日は全勤務時間に、時間手当は設定した時間帯（<span id="time-range-label">17:00〜21:00</span>）に加算します。終了時刻が開始時刻より早い場合は翌日までの時間帯です。開始から終了までを勤務時間として計算し、休憩時間は差し引きません。</p>
+      </section>
+    </section>
+
+    <dialog id="shift-dialog" class="shift-dialog" aria-labelledby="shift-heading">
+      <section class="panel editor-panel">
+      <div class="dialog-heading">
+        <h2 id="shift-heading">シフトを登録・編集</h2>
+        <button id="close-shift-dialog" class="button button-secondary" type="button">閉じる</button>
+      </div>
+      <div class="editor-grid">
+        <label for="shift-date">日付
+          <div class="stepper-input">
+            <input id="shift-date" type="date" min="2027-01-01" max="2027-12-31">
+            <div class="stepper-unit">
+              <span>月</span>
+              <button type="button" data-date-unit="month" data-step="1" aria-label="翌月へ">▲</button>
+              <button type="button" data-date-unit="month" data-step="-1" aria-label="前月へ">▼</button>
+            </div>
+            <div class="stepper-unit">
+              <span>日</span>
+              <button type="button" data-date-unit="day" data-step="1" aria-label="翌日へ">▲</button>
+              <button type="button" data-date-unit="day" data-step="-1" aria-label="前日へ">▼</button>
+            </div>
+          </div>
+        </label>
+        <label for="start-time">開始時刻
+          <div class="stepper-input">
+            <input id="start-time" type="time" step="1800" value="17:00">
+            <div class="stepper-unit">
+              <span>30分</span>
+              <button type="button" data-time-target="start-time" data-step="30" aria-label="開始時刻を30分進める">▲</button>
+              <button type="button" data-time-target="start-time" data-step="-30" aria-label="開始時刻を30分戻す">▼</button>
+            </div>
+          </div>
+        </label>
+        <label for="end-time">終了時刻（翌日も可）
+          <div class="stepper-input">
+            <input id="end-time" type="time" step="1800" value="21:00">
+            <div class="stepper-unit">
+              <span>30分</span>
+              <button type="button" data-time-target="end-time" data-step="30" aria-label="終了時刻を30分進める">▲</button>
+              <button type="button" data-time-target="end-time" data-step="-30" aria-label="終了時刻を30分戻す">▼</button>
+            </div>
+          </div>
+        </label>
+        <div class="button-row shift-actions">
+          <button id="save-shift" class="button button-primary" type="button">シフトを登録 / 更新</button>
+          <button id="apply-weekday" class="button button-secondary" type="button">この月の同じ曜日を同じ時間にする</button>
+          <button id="delete-shift" class="button button-secondary" type="button">削除</button>
+        </div>
+      </div>
+      <p id="dialog-status" role="status" aria-live="polite"></p>
+      <section class="event-section" aria-labelledby="event-heading">
+        <h3 id="event-heading">通常の予定（収入計算には含みません）</h3>
+        <div class="event-form">
+          <label for="event-title">予定名
+            <input id="event-title" type="text" maxlength="80" placeholder="例：病院、友達と食事">
+          </label>
+          <button id="add-event" class="button button-primary" type="button">予定を追加</button>
+        </div>
+        <ul id="event-list" class="event-list" aria-label="この日の通常予定"></ul>
+      </section>
+      </section>
+    </dialog>
+    <p id="status" role="status" aria-live="polite"></p>
+
+    <h2 class="calendar-heading">2027年のカレンダー（日付をクリックすると予定の登録画面が開きます）</h2>
+    <main id="month-grid" class="month-grid" aria-label="2027年のシフト・予定カレンダー"></main>
+  </div>
+
+  <script>
+    (() => {
+      const YEAR = 2027;
+      const STORAGE_KEY = 'shift-calendar-2027-web-v1';
+      const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
+      const weekdayFull = ['日曜日', '月曜日', '火曜日', '水曜日', '木曜日', '金曜日', '土曜日'];
+      const monthNames = ['1月', '2月', '3月', '4月', '5月', '6月',
+        '7月', '8月', '9月', '10月', '11月', '12月'];
+      const holidays = new Map([
+        ['2027-01-01', '元日'], ['2027-01-11', '成人の日'],
+        ['2027-02-11', '建国記念の日'], ['2027-02-23', '天皇誕生日'],
+        ['2027-03-20', '春分の日'], ['2027-05-03', '憲法記念日'],
+        ['2027-05-04', 'みどりの日'], ['2027-05-05', 'こどもの日'],
+        ['2027-07-19', '海の日'], ['2027-08-11', '山の日'],
+        ['2027-09-20', '敬老の日'], ['2027-09-23', '秋分の日'],
+        ['2027-10-11', 'スポーツの日'], ['2027-11-03', '文化の日'],
+        ['2027-11-23', '勤労感謝の日']
+      ]);
+
+      const wageInput = document.getElementById('hourly-wage');
+      const weekendInput = document.getElementById('weekend-premium');
+      const timeInput = document.getElementById('time-premium');
+      const timePremiumStartInput = document.getElementById('time-premium-start');
+      const timePremiumEndInput = document.getElementById('time-premium-end');
+      const dateInput = document.getElementById('shift-date');
+      const startInput = document.getElementById('start-time');
+      const endInput = document.getElementById('end-time');
+      const shiftDialog = document.getElementById('shift-dialog');
+      const monthGrid = document.getElementById('month-grid');
+      const status = document.getElementById('status');
+      const dialogStatus = document.getElementById('dialog-status');
+      const storageStatus = document.getElementById('storage-status');
+      const timeRangeLabel = document.getElementById('time-range-label');
+      const eventTitleInput = document.getElementById('event-title');
+      const eventList = document.getElementById('event-list');
+      const exportButton = document.getElementById('export-ical');
+      const settingsErrorMessage = '時給・手当は0以上の整数、時間手当の開始・終了は異なる時刻を入力してください。';
+      const state = { selectedDate: null, shifts: {}, events: {} };
+
+      function dateKey(year, month, day) {
+        return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      }
+
+      function dateFromKey(key) {
+        const [year, month, day] = key.split('-').map(Number);
+        return new Date(year, month - 1, day);
+      }
+
+      function currency(value) {
+        return new Intl.NumberFormat('ja-JP', {
+          style: 'currency', currency: 'JPY', maximumFractionDigits: 0
+        }).format(Math.round(value));
+      }
+
+      function escapeIcsText(value) {
+        return String(value)
+          .replace(/\\/g, '\\\\')
+          .replace(/\r\n|\r|\n/g, '\\n')
+          .replace(/,/g, '\\,')
+          .replace(/;/g, '\\;');
+      }
+
+      function foldIcsLine(line) {
+        const encoder = new TextEncoder();
+        let folded = '';
+        let byteLength = 0;
+        for (const character of line) {
+          const characterBytes = encoder.encode(character).length;
+          if (byteLength + characterBytes > 75) {
+            folded += '\r\n ';
+            byteLength = 1;
+          }
+          folded += character;
+          byteLength += characterBytes;
+        }
+        return folded;
+      }
+
+      function icsDate(key) {
+        return key.replace(/-/g, '');
+      }
+
+      function icsDateTime(key, time) {
+        return `${icsDate(key)}T${time.replace(':', '')}00`;
+      }
+
+      function readRate(input) {
+        const value = input.value.trim() === '' ? 0 : Number(input.value);
+        if (!Number.isFinite(value) || !Number.isInteger(value) || value < 0 || value > 1000000) {
+          return null;
+        }
+        return value;
+      }
+
+      function getSettings() {
+        const hourlyWage = readRate(wageInput);
+        const weekendPremium = readRate(weekendInput);
+        const timePremium = readRate(timeInput);
+        const timePremiumStart = timePremiumStartInput.value;
+        const timePremiumEnd = timePremiumEndInput.value;
+        const validTime = (value) => /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value);
+        if (hourlyWage === null || weekendPremium === null || timePremium === null ||
+            !validTime(timePremiumStart) || !validTime(timePremiumEnd) ||
+            timePremiumStart === timePremiumEnd) {
+          return null;
+        }
+        return { hourlyWage, weekendPremium, timePremium, timePremiumStart, timePremiumEnd };
+      }
+
+      function getShiftDuration(shift) {
+        const start = timeToMinutes(shift.start);
+        const end = timeToMinutes(shift.end);
+        return end > start ? end - start : end + 1440 - start;
+      }
+
+      function timeToMinutes(value) {
+        const [hour, minute] = value.split(':').map(Number);
+        return hour * 60 + minute;
+      }
+
+      function timePremiumMinutes(shift, settings) {
+        const start = timeToMinutes(shift.start);
+        const end = start + getShiftDuration(shift);
+        const allowanceStartMinutes = timeToMinutes(settings.timePremiumStart);
+        const allowanceEndMinutes = timeToMinutes(settings.timePremiumEnd);
+        let total = 0;
+        for (let offset = -2; offset <= 2; offset += 1) {
+          const allowanceStart = offset * 1440 + allowanceStartMinutes;
+          let allowanceEnd = offset * 1440 + allowanceEndMinutes;
+          if (allowanceEnd <= allowanceStart) allowanceEnd += 1440;
+          total += Math.max(0, Math.min(end, allowanceEnd) - Math.max(start, allowanceStart));
+        }
+        return total;
+      }
+
+      function isWeekendOrHoliday(key) {
+        const weekday = dateFromKey(key).getDay();
+        return weekday === 0 || weekday === 6 || holidays.has(key);
+      }
+
+      function shiftIncome(key, shift, settings) {
+        const hours = getShiftDuration(shift) / 60;
+        const premiumHours = timePremiumMinutes(shift, settings) / 60;
+        const dayPremium = isWeekendOrHoliday(key) ? settings.weekendPremium : 0;
+        return hours * (settings.hourlyWage + dayPremium) +
+          premiumHours * settings.timePremium;
+      }
+
+      function setStatus(message, isError = false) {
+        [status, dialogStatus].forEach((element) => {
+          element.textContent = message;
+          element.classList.toggle('error', isError);
+        });
+      }
+
+      function saveState() {
+        const settings = getSettings();
+        if (!settings) {
+          setStatus(settingsErrorMessage, true);
+          return false;
+        }
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify({
+            settings,
+            shifts: state.shifts,
+            events: state.events
+          }));
+          storageStatus.textContent = '入力内容はこのブラウザに自動保存されます。';
+          return true;
+        } catch (error) {
+          console.error('カレンダーの保存に失敗しました。', error);
+          storageStatus.textContent = '自動保存できません。ブラウザの保存設定を確認してください。';
+          return false;
+        }
+      }
+
+      function loadState() {
+        try {
+          const saved = localStorage.getItem(STORAGE_KEY);
+          if (!saved) return;
+          const parsed = JSON.parse(saved);
+          if (parsed && parsed.settings) {
+            wageInput.value = String(parsed.settings.hourlyWage ?? 1200);
+            weekendInput.value = String(parsed.settings.weekendPremium ?? 0);
+            timeInput.value = String(parsed.settings.timePremium ?? parsed.settings.nightPremium ?? 0);
+            timePremiumStartInput.value = String(parsed.settings.timePremiumStart ?? '17:00');
+            timePremiumEndInput.value = String(parsed.settings.timePremiumEnd ?? '21:00');
+          }
+          if (parsed && parsed.shifts && typeof parsed.shifts === 'object') {
+            state.shifts = parsed.shifts;
+          }
+          if (parsed && parsed.events && typeof parsed.events === 'object') {
+            state.events = {};
+            for (const [key, events] of Object.entries(parsed.events)) {
+              if (/^2027-\d{2}-\d{2}$/.test(key) && Array.isArray(events)) {
+                state.events[key] = events.filter((event) => typeof event === 'string' && event.trim());
+              }
+            }
+          }
+        } catch (error) {
+          console.error('保存済みカレンダーを読み込めませんでした。', error);
+          storageStatus.textContent = '保存データを読み込めませんでした。データを確認してください。';
+        }
+      }
+
+      function updateSummary(settings) {
+        let totalHours = 0;
+        let totalIncome = 0;
+        let days = 0;
+        for (const [key, shift] of Object.entries(state.shifts)) {
+          if (!shift || typeof shift.start !== 'string' || typeof shift.end !== 'string') continue;
+          totalHours += getShiftDuration(shift) / 60;
+          totalIncome += shiftIncome(key, shift, settings);
+          days += 1;
+        }
+        document.getElementById('total-days').textContent = `${days}日`;
+        document.getElementById('total-hours').textContent = `${totalHours.toFixed(1)}時間`;
+        document.getElementById('annual-income').textContent = currency(totalIncome);
+        exportButton.disabled = Object.keys(state.shifts).length === 0 &&
+          !Object.values(state.events).some((events) => Array.isArray(events) && events.length > 0);
+      }
+
+      function exportCalendar() {
+        const settings = getSettings();
+        if (!settings) {
+          setStatus(settingsErrorMessage, true);
+          return;
+        }
+
+        const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
+        const lines = [
+          'BEGIN:VCALENDAR',
+          'VERSION:2.0',
+          'PRODID:-//Shift Calendar 2027//JA',
+          'CALSCALE:GREGORIAN',
+          'METHOD:PUBLISH',
+          'X-WR-CALNAME:2027年 シフトと予定',
+          'BEGIN:VTIMEZONE',
+          'TZID:Asia/Tokyo',
+          'X-LIC-LOCATION:Asia/Tokyo',
+          'BEGIN:STANDARD',
+          'TZOFFSETFROM:+0900',
+          'TZOFFSETTO:+0900',
+          'TZNAME:JST',
+          'DTSTART:19700101T000000',
+          'END:STANDARD',
+          'END:VTIMEZONE'
+        ];
+
+        for (const [key, shift] of Object.entries(state.shifts)) {
+          if (!shift || typeof shift.start !== 'string' || typeof shift.end !== 'string') continue;
+          const endDate = dateFromKey(key);
+          if (timeToMinutes(shift.end) <= timeToMinutes(shift.start)) {
+            endDate.setDate(endDate.getDate() + 1);
+          }
+          const endKey = dateKey(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+          const hours = (getShiftDuration(shift) / 60).toFixed(1);
+          const income = currency(shiftIncome(key, shift, settings));
+          lines.push(
+            'BEGIN:VEVENT',
+            `UID:shift-${key}@shift-calendar-2027.local`,
+            `DTSTAMP:${stamp}`,
+            `DTSTART;TZID=Asia/Tokyo:${icsDateTime(key, shift.start)}`,
+            `DTEND;TZID=Asia/Tokyo:${icsDateTime(endKey, shift.end)}`,
+            'SUMMARY:バイトシフト',
+            `DESCRIPTION:${escapeIcsText(`勤務時間: ${hours}時間\n予定収入: ${income}`)}`,
+            'CATEGORIES:バイト',
+            'END:VEVENT'
+          );
+        }
+
+        for (const [key, events] of Object.entries(state.events)) {
+          if (!Array.isArray(events)) continue;
+          const nextDate = dateFromKey(key);
+          nextDate.setDate(nextDate.getDate() + 1);
+          const endKey = dateKey(nextDate.getFullYear(), nextDate.getMonth(), nextDate.getDate());
+          events.forEach((name, index) => {
+            if (typeof name !== 'string' || !name.trim()) return;
+            lines.push(
+              'BEGIN:VEVENT',
+              `UID:event-${key}-${index}@shift-calendar-2027.local`,
+              `DTSTAMP:${stamp}`,
+              `DTSTART;VALUE=DATE:${icsDate(key)}`,
+              `DTEND;VALUE=DATE:${icsDate(endKey)}`,
+              `SUMMARY:${escapeIcsText(name)}`,
+              'CATEGORIES:通常予定',
+              'END:VEVENT'
+            );
+          });
+        }
+
+        lines.push('END:VCALENDAR');
+        const ics = `${lines.map(foldIcsLine).join('\r\n')}\r\n`;
+        const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'shift_calendar_2027.ics';
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+        setStatus('iPhoneカレンダー用の予定ファイルを書き出しました。');
+      }
+
+      function renderEventList(key) {
+        eventList.replaceChildren();
+        const events = state.events[key] || [];
+        if (events.length === 0) {
+          const empty = document.createElement('li');
+          empty.className = 'event-empty';
+          empty.textContent = 'この日の通常予定はありません。';
+          eventList.appendChild(empty);
+          return;
+        }
+        events.forEach((name, index) => {
+          const item = document.createElement('li');
+          item.className = 'event-item';
+          const text = document.createElement('span');
+          text.className = 'event-item-name';
+          text.textContent = name;
+          const remove = document.createElement('button');
+          remove.className = 'button button-secondary event-delete';
+          remove.type = 'button';
+          remove.textContent = '削除';
+          remove.setAttribute('aria-label', `予定「${name}」を削除`);
+          remove.addEventListener('click', () => deleteEvent(key, index));
+          item.append(text, remove);
+          eventList.appendChild(item);
+        });
+      }
+
+      function addEvent() {
+        const key = dateInput.value;
+        const name = eventTitleInput.value.trim();
+        if (!key || !key.startsWith('2027-')) {
+          setStatus('2027年の日付を選択してください。', true);
+          return;
+        }
+        if (!name) {
+          setStatus('予定名を入力してください。', true);
+          eventTitleInput.focus();
+          return;
+        }
+        if (!getSettings()) {
+          setStatus(settingsErrorMessage, true);
+          return;
+        }
+        if (!state.events[key]) state.events[key] = [];
+        state.events[key].push(name);
+        const saved = saveState();
+        eventTitleInput.value = '';
+        renderEventList(key);
+        renderAll();
+        setStatus(saved ? '通常予定を追加しました。' : '予定を追加しましたが、自動保存できませんでした。', !saved);
+      }
+
+      function deleteEvent(key, index) {
+        if (!state.events[key] || index < 0 || index >= state.events[key].length) return;
+        state.events[key].splice(index, 1);
+        if (state.events[key].length === 0) delete state.events[key];
+        const saved = saveState();
+        renderEventList(key);
+        renderAll();
+        setStatus(saved ? '通常予定を削除しました。' : '予定を削除しましたが、自動保存できませんでした。', !saved);
+      }
+
+      function selectDate(key, openDialog = false) {
+        state.selectedDate = key;
+        dateInput.value = key;
+        const shift = state.shifts[key];
+        startInput.value = shift ? shift.start : '17:00';
+        endInput.value = shift ? shift.end : '21:00';
+        eventTitleInput.value = '';
+        renderEventList(key);
+        renderAll();
+        if (openDialog && !shiftDialog.open) {
+          setStatus('');
+          shiftDialog.showModal();
+        }
+      }
+
+      function adjustDate(unit, step) {
+        const key = dateInput.value || state.selectedDate || '2027-01-01';
+        const date = dateFromKey(key);
+        if (unit === 'month') {
+          const month = date.getMonth() + step;
+          if (month < 0 || month > 11) return;
+          const day = Math.min(date.getDate(), new Date(YEAR, month + 1, 0).getDate());
+          selectDate(dateKey(YEAR, month, day));
+          return;
+        }
+        date.setDate(date.getDate() + step);
+        if (date.getFullYear() !== YEAR) return;
+        selectDate(dateKey(YEAR, date.getMonth(), date.getDate()));
+      }
+
+      function adjustTime(target, step) {
+        const input = document.getElementById(target);
+        const defaultTime = target.includes('start') ? '17:00' : '21:00';
+        const current = input.value ? timeToMinutes(input.value) : timeToMinutes(defaultTime);
+        const minutes = (current + step + 1440) % 1440;
+        input.value = `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+
+      function createMonth(monthIndex, settings) {
+        const firstWeekday = new Date(YEAR, monthIndex, 1).getDay();
+        const daysInMonth = new Date(YEAR, monthIndex + 1, 0).getDate();
+        const card = document.createElement('section');
+        card.className = 'month-card';
+
+        const header = document.createElement('header');
+        header.className = 'month-header';
+        const title = document.createElement('h3');
+        title.textContent = `2027年 ${monthNames[monthIndex]}`;
+        const monthTotal = Object.entries(state.shifts).reduce((sum, [key, shift]) => {
+          if (!key.startsWith(`2027-${String(monthIndex + 1).padStart(2, '0')}-`)) return sum;
+          return sum + shiftIncome(key, shift, settings);
+        }, 0);
+        const total = document.createElement('span');
+        total.className = 'month-total';
+        total.textContent = `月収 ${currency(monthTotal)}`;
+        header.append(title, total);
+        card.appendChild(header);
+
+        const table = document.createElement('table');
+        const thead = document.createElement('thead');
+        const headingRow = document.createElement('tr');
+        weekdays.forEach((weekday) => {
+          const th = document.createElement('th');
+          th.scope = 'col';
+          th.textContent = weekday;
+          headingRow.appendChild(th);
+        });
+        thead.appendChild(headingRow);
+        table.appendChild(thead);
+
+        const tbody = document.createElement('tbody');
+        let day = 1;
+        for (let week = 0; week < 6; week += 1) {
+          const row = document.createElement('tr');
+          for (let weekday = 0; weekday < 7; weekday += 1) {
+            const cell = document.createElement('td');
+            const position = week * 7 + weekday;
+            if (position < firstWeekday || day > daysInMonth) {
+              const empty = document.createElement('div');
+              empty.className = 'day-button empty';
+              empty.setAttribute('aria-hidden', 'true');
+              cell.appendChild(empty);
+            } else {
+              const key = dateKey(YEAR, monthIndex, day);
+              const holidayName = holidays.get(key);
+              const shift = state.shifts[key];
+              const events = state.events[key] || [];
+              const button = document.createElement('button');
+              button.type = 'button';
+              button.className = 'day-button';
+              if (weekday === 0) button.classList.add('sunday');
+              if (weekday === 6) button.classList.add('saturday');
+              if (holidayName) button.classList.add('holiday');
+              if (state.selectedDate === key) button.classList.add('selected');
+              button.setAttribute('aria-label',
+                `${monthIndex + 1}月${day}日 ${weekdayFull[weekday]}` +
+                (holidayName ? ` ${holidayName}` : '') +
+                (shift ? ` シフト ${shift.start}から${shift.end}` : ' シフトなし') +
+                (events.length ? ` 予定 ${events.join('、')}` : ' 通常予定なし'));
+              button.addEventListener('click', () => selectDate(key, true));
+
+              const number = document.createElement('span');
+              number.className = 'day-number';
+              number.textContent = `${day}日`;
+              button.appendChild(number);
+              if (holidayName) {
+                const holiday = document.createElement('span');
+                holiday.className = 'holiday-tag';
+                holiday.textContent = holidayName;
+                button.appendChild(holiday);
+              }
+              if (shift) {
+                const details = document.createElement('span');
+                details.className = 'shift-info';
+                details.textContent = `${shift.start}〜${shift.end} · ${(getShiftDuration(shift) / 60).toFixed(1)}h`;
+                button.appendChild(details);
+                const income = document.createElement('span');
+                income.className = 'shift-income';
+                income.textContent = currency(shiftIncome(key, shift, settings));
+                button.appendChild(income);
+              }
+              if (events.length) {
+                const eventContainer = document.createElement('span');
+                eventContainer.className = 'day-events';
+                events.slice(0, 2).forEach((name) => {
+                  const eventName = document.createElement('span');
+                  eventName.className = 'day-event';
+                  eventName.textContent = name;
+                  eventName.title = name;
+                  eventContainer.appendChild(eventName);
+                });
+                if (events.length > 2) {
+                  const more = document.createElement('span');
+                  more.className = 'day-event-more';
+                  more.textContent = `ほか${events.length - 2}件`;
+                  eventContainer.appendChild(more);
+                }
+                button.appendChild(eventContainer);
+              }
+              cell.appendChild(button);
+              day += 1;
+            }
+            row.appendChild(cell);
+          }
+          tbody.appendChild(row);
+          if (day > daysInMonth) break;
+        }
+        table.appendChild(tbody);
+        card.appendChild(table);
+        return card;
+      }
+
+      function renderAll() {
+        const settings = getSettings();
+        if (!settings) {
+          setStatus(settingsErrorMessage, true);
+          return;
+        }
+        timeRangeLabel.textContent = `${settings.timePremiumStart}〜${settings.timePremiumEnd}` +
+          (timeToMinutes(settings.timePremiumEnd) <= timeToMinutes(settings.timePremiumStart) ? '（翌日）' : '');
+        monthGrid.replaceChildren();
+        for (let month = 0; month < 12; month += 1) {
+          monthGrid.appendChild(createMonth(month, settings));
+        }
+        updateSummary(settings);
+      }
+
+      function saveShift() {
+        const key = dateInput.value;
+        const start = startInput.value;
+        const end = endInput.value;
+        if (!key || !key.startsWith('2027-')) {
+          setStatus('2027年の日付を選択してください。', true);
+          return;
+        }
+        if (!start || !end || start === end) {
+          setStatus('開始時刻と終了時刻を入力してください。同じ時刻は指定できません。', true);
+          return;
+        }
+        if (!getSettings()) {
+          setStatus(settingsErrorMessage, true);
+          return;
+        }
+        state.shifts[key] = { start, end };
+        state.selectedDate = key;
+        if (!saveState()) return;
+        renderAll();
+        setStatus('シフトを保存しました。');
+        shiftDialog.close();
+      }
+
+      function applyToSameWeekday() {
+        const sourceKey = dateInput.value;
+        const start = startInput.value;
+        const end = endInput.value;
+        if (!sourceKey || !sourceKey.startsWith('2027-')) {
+          setStatus('2027年の日付を選択してください。', true);
+          return;
+        }
+        if (!start || !end || start === end) {
+          setStatus('開始時刻と終了時刻を入力してください。同じ時刻は指定できません。', true);
+          return;
+        }
+        if (!getSettings()) {
+          setStatus(settingsErrorMessage, true);
+          return;
+        }
+
+        const sourceDate = dateFromKey(sourceKey);
+        const month = sourceDate.getMonth();
+        const weekday = sourceDate.getDay();
+        const daysInMonth = new Date(YEAR, month + 1, 0).getDate();
+        let applied = 0;
+
+        for (let day = 1; day <= daysInMonth; day += 1) {
+          if (new Date(YEAR, month, day).getDay() !== weekday) continue;
+          const targetKey = dateKey(YEAR, month, day);
+          state.shifts[targetKey] = { start, end };
+          applied += 1;
+        }
+
+        state.selectedDate = sourceKey;
+        if (!saveState()) return;
+        renderAll();
+        setStatus(`同じ曜日のシフトを${applied}日分、同じ時間に設定しました。`);
+        shiftDialog.close();
+      }
+
+      function deleteShift() {
+        const key = dateInput.value;
+        if (!key || !state.shifts[key]) {
+          setStatus('削除するシフトがありません。', true);
+          return;
+        }
+        delete state.shifts[key];
+        state.selectedDate = key;
+        if (!saveState()) return;
+        renderAll();
+        setStatus('シフトを削除しました。');
+        shiftDialog.close();
+      }
+
+      [wageInput, weekendInput, timeInput].forEach((input) => {
+        input.addEventListener('focus', () => {
+          if (input.value === '0') input.value = '';
+        });
+        input.addEventListener('input', () => {
+          if (getSettings()) {
+            saveState();
+            renderAll();
+            setStatus('');
+          } else {
+            setStatus(settingsErrorMessage, true);
+          }
+        });
+      });
+      [timePremiumStartInput, timePremiumEndInput].forEach((input) => {
+        input.addEventListener('input', () => {
+          if (getSettings()) {
+            saveState();
+            renderAll();
+            setStatus('');
+          } else {
+            setStatus(settingsErrorMessage, true);
+          }
+        });
+      });
+
+      dateInput.addEventListener('change', () => {
+        const key = dateInput.value;
+        if (key && key.startsWith('2027-')) {
+          selectDate(key);
+        } else if (key) {
+          setStatus('2027年の日付を選択してください。', true);
+        }
+      });
+      document.querySelectorAll('[data-date-unit]').forEach((button) => {
+        button.addEventListener('click', () => {
+          adjustDate(button.dataset.dateUnit, Number(button.dataset.step));
+        });
+      });
+      document.querySelectorAll('[data-time-target]').forEach((button) => {
+        button.addEventListener('click', () => {
+          adjustTime(button.dataset.timeTarget, Number(button.dataset.step));
+        });
+      });
+      document.getElementById('save-shift').addEventListener('click', saveShift);
+      document.getElementById('apply-weekday').addEventListener('click', applyToSameWeekday);
+      document.getElementById('delete-shift').addEventListener('click', deleteShift);
+      exportButton.addEventListener('click', exportCalendar);
+      document.getElementById('add-event').addEventListener('click', addEvent);
+      document.getElementById('close-shift-dialog').addEventListener('click', () => {
+        shiftDialog.close();
+      });
+      shiftDialog.addEventListener('click', (event) => {
+        if (event.target === shiftDialog) shiftDialog.close();
+      });
+
+      loadState();
+      renderAll();
+      if (state.shifts && Object.keys(state.shifts).length) {
+        const firstDate = Object.keys(state.shifts).sort()[0];
+        selectDate(firstDate);
+      } else {
+        selectDate('2027-01-01');
+      }
+    })();
+  </script>
+</body>
+</html>
